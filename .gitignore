@@ -1,0 +1,24 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Secrets and local config
+.env
+*.pem
+
+# Local data and databases
+data/
+*.csv
+*.parquet
+*.db
+*.sqlite
+
+# Mac and editor files
+.DS_Store
+.idea/
+.vscode/
+
+# Notebooks
+.ipynb_checkpoints/
