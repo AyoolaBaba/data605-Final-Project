@@ -59,12 +59,12 @@ def weekly_performance_csv():
                         'Cohort Name' : cohort_title,
                         'Week Number': j,
                         'Analytic Score': row.get(f'Analytic_W{j}'),
-                        'Independent': row.get(f'Independent_W{j}'),
-                        'Determined': row.get(f'Determined_W{j}'),
-                        'Professional': row.get(f'Professional_W{j}'),
-                        'Studious': row.get(f'Studious_W{j}'),
-                        'Imaginative': row.get(f'Imaginative_W{j}'),
-                        'Drop_out': drop_out
+                        'Independent Score': row.get(f'Independent_W{j}'),
+                        'Determined Score': row.get(f'Determined_W{j}'),
+                        'Professional Score': row.get(f'Professional_W{j}'),
+                        'Studious Score': row.get(f'Studious_W{j}'),
+                        'Imaginative Score': row.get(f'Imaginative_W{j}'),
+                        'Dropout Status': drop_out
                     })
 
     # Returning the final in dataframe format
