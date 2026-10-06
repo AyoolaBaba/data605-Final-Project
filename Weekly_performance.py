@@ -5,7 +5,7 @@ import pandas as pd
 def weekly_performance_csv():
     """Taking weekly performances from 36 cohorts and transforming into long format for each student"""
 
-    # Importing s3 bucket to take data fromif 
+    # Importing s3 bucket to take data from
     s3_client = boto3.client('s3')
     bucket_name = "data605-final-project"
 
@@ -57,6 +57,16 @@ def weekly_performance_csv():
         cohort_info['cohort_name'] = cohort_title
         cohort_info['stream_name'] = stream_title
 
+        valid_trainers = df["trainer"].dropna().unique()
+        if len(valid_trainers) > 0:
+            trainer = valid_trainers[0]
+            if trainer == "Ely Kely":
+                trainer = "Elly Kelly"
+            cohort_info["trainer_name"] = trainer
+            trainers.add(trainer)
+        else:
+            cohort_info["trainer_name"] = "Not given"
+
         for col in df.columns:
             if "_W" in col:
                 week_num = int(col.split("_W")[1])
@@ -67,19 +77,6 @@ def weekly_performance_csv():
 
         # Working through each row
         for _, row in df.iterrows():
-
-            trainer = row.get('trainer')
-
-
-            if trainer not in cohort_info.keys():
-                # print(trainer, type(trainer))
-                if trainer == 'Ely Kely':
-                    cohort_info['trainer_name'] = 'Elly Kelly'
-                    trainers.add('Elly Kelly')
-                else:
-                    cohort_info['trainer_name'] = trainer
-                    trainers.add(trainer)
-
 
             # Determining if a student is a drop out
             drop_out = "No"
