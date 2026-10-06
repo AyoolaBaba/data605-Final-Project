@@ -44,8 +44,8 @@ def weekly_performance_csv():
         stream_title = csv_key[0]
 
         # Adding cohort and streams to set to get a list of unique entries
-        cohorts.add(cohort_title)
         streams.add(stream_title)
+        cohorts.add(cohort_title)
 
         # Reading in the csv for each cohort
         df = pd.read_csv(csv_body)
@@ -56,8 +56,6 @@ def weekly_performance_csv():
 
         cohort_info['cohort_name'] = cohort_title
         cohort_info['stream_name'] = stream_title
-
-
 
         for col in df.columns:
             if "_W" in col:
@@ -72,10 +70,16 @@ def weekly_performance_csv():
 
             trainer = row.get('trainer')
 
-            trainers.add(trainer)
 
             if trainer not in cohort_info.keys():
-                cohort_info['trainer_name'] = trainer
+                # print(trainer, type(trainer))
+                if trainer == 'Ely Kely':
+                    cohort_info['trainer_name'] = 'Elly Kelly'
+                    trainers.add('Elly Kelly')
+                else:
+                    cohort_info['trainer_name'] = trainer
+                    trainers.add(trainer)
+
 
             # Determining if a student is a drop out
             drop_out = "No"
