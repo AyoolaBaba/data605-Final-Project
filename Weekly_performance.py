@@ -18,8 +18,17 @@ def weekly_performance_csv():
     # Creating a list to add data to, in order to transform into a data frame
     all_records = []
 
+    # Adding trainers to a unique list to be used later
+    trainers = set()
+    cohorts = set()
+    streams = set()
+
+    cohort_dict = []
+
     # Running through each entry in the bucket with academy prefix
     for content in academy_bucket_contents['Contents']:
+
+        cohort_info = {}
 
         # Pulling the object from S3
         csv_object = s3_client.get_object(
@@ -32,6 +41,11 @@ def weekly_performance_csv():
         csv_key = content['Key'][8:][:-4]
         csv_key = csv_key.split('_')
         cohort_title = csv_key[0] + " " + csv_key[1]
+        stream_title = csv_key[0]
+
+        # Adding cohort and streams to set to get a list of unique entries
+        cohorts.add(cohort_title)
+        streams.add(stream_title)
 
         # Reading in the csv for each cohort
         df = pd.read_csv(csv_body)
@@ -40,6 +54,11 @@ def weekly_performance_csv():
         # of all the entries to be worked through later
         weeks = set()
 
+        cohort_info['cohort_name'] = cohort_title
+        cohort_info['stream_name'] = stream_title
+
+
+
         for col in df.columns:
             if "_W" in col:
                 week_num = int(col.split("_W")[1])
@@ -47,8 +66,16 @@ def weekly_performance_csv():
 
         sorted_weeks = sorted(list(weeks))
 
+
         # Working through each row
         for _, row in df.iterrows():
+
+            trainer = row.get('trainer')
+
+            trainers.add(trainer)
+
+            if trainer not in cohort_info.keys():
+                cohort_info['trainer_name'] = trainer
 
             # Determining if a student is a drop out
             drop_out = "No"
@@ -67,7 +94,6 @@ def weekly_performance_csv():
                 # To ensure no empty values are added
                 # into the final dataframe
                 if pd.isna(row.get(f'Analytic_W{j}')) is False:
-
                     all_records.append({
                         'candidate_name': row.get('name'),
                         'cohort_name': cohort_title,
@@ -80,6 +106,7 @@ def weekly_performance_csv():
                         'imaginative_score': row.get(f'Imaginative_W{j}'),
                         'drop_out': drop_out
                     })
+        cohort_dict.append(cohort_info)
 
     # Returning the final in dataframe format
-    return pd.DataFrame(all_records)
+    return pd.DataFrame(all_records), trainers, cohorts, streams, cohort_dict
