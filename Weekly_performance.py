@@ -5,7 +5,7 @@ import pandas as pd
 def weekly_performance_csv():
     """Taking weekly performances from 36 cohorts and transforming into long format for each student"""
 
-    # Importing s3 bucket to take data from
+    # Importing s3 bucket to take data fromif 
     s3_client = boto3.client('s3')
     bucket_name = "data605-final-project"
 
