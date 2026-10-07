@@ -674,6 +674,11 @@ def insert_recruiters(
     connection,
     recruiters_df
 ):
+    cursor.execute("SET FOREIGN_KEY_CHECKS = 0;")
+    cursor.execute("TRUNCATE TABLE candidates;")
+    cursor.execute("TRUNCATE TABLE recruiters;")
+    cursor.execute("SET FOREIGN_KEY_CHECKS = 1;")
+    connection.commit()
 
     insert_query = """
         INSERT INTO recruiters (
@@ -936,7 +941,7 @@ def check_mysql_tables(
 # MAIN
 # -----------------------------
 
-def main():
+def candidates_main():
 
     connection = None
     cursor = None
@@ -1018,7 +1023,3 @@ def main():
             and connection.is_connected()
         ):
             connection.close()
-
-
-if __name__ == "__main__":
-    main()
