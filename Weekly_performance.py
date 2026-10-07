@@ -1,6 +1,6 @@
 import boto3
 import pandas as pd
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 import pymysql
 import mysql.connector
 import os
@@ -163,13 +163,30 @@ def weekly_performance_main():
         f"mysql+pymysql://{db_user}:{db_password}@{db_host}/{db_database}"
     )
 
+    try:
+        with engine.begin() as connection:
+            connection.execute(text("SET FOREIGN_KEY_CHECKS = 0;"))
+            connection.execute(text("TRUNCATE TABLE weekly_performances;"))
+            connection.execute(text("TRUNCATE TABLE cohorts;"))
+            connection.execute(text("TRUNCATE TABLE trainers;"))
+            connection.execute(text("TRUNCATE TABLE streams;"))
+            connection.execute(text("SET FOREIGN_KEY_CHECKS = 1;"))
+        print("Successfully truncated existing tables.")
+    except Exception as e:
+        print("Failed to truncate tables:", e)
+
 
     #  ---------------- Retrieving the Data from the functions ----------------
 
     weekly_performance_df, trainers, cohorts, streams, cohort_dict = weekly_performance_csv()
 
     trainers_df = pd.DataFrame(trainers, columns= ['trainer_name'])
-    streams_df = pd.DataFrame(streams, columns = ['stream_name'])
+    streams_df = pd.DataFrame([
+        {"stream_id": 1, "stream_name": "Data"},
+        {"stream_id": 2, "stream_name": "Business"},
+        {"stream_id": 3, "stream_name": "Engineering"}
+        # Add any other streams you have
+    ])
 
     cohort_df = pd.DataFrame(cohort_dict)
 
@@ -191,10 +208,9 @@ def weekly_performance_main():
     # ---------------- Cohort Referencing ----------------
 
     trainer_lookup = pd.read_sql("SELECT trainer_id, trainer_name FROM trainers", con = engine)
-    streams_lookup = pd.read_sql("SELECT stream_id, stream_name FROM streams", con = engine)
 
     trainer_map = dict(zip(trainer_lookup['trainer_name'], trainer_lookup['trainer_id']))
-    stream_map = dict(zip(streams_lookup["stream_name"], streams_lookup["stream_id"]))
+    stream_map = dict(zip(streams_df["stream_name"], streams_df["stream_id"]))
 
     cohort_df['trainer_id'] = cohort_df['trainer_name'].map(trainer_map)
     cohort_df['stream_id'] = cohort_df['stream_name'].map(stream_map)
