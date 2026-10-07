@@ -1,6 +1,9 @@
 import boto3
 import pandas as pd
-
+from sqlalchemy import create_engine
+import pymysql
+import mysql.connector
+import os
 
 def weekly_performance_csv():
     """Taking weekly performances from 36 cohorts and transforming into long format for each student"""
@@ -111,7 +114,8 @@ def weekly_performance_csv():
                 name = "Cherrita McGilleghole"
             elif name == "Deirdre Van Den Velde":
                 name = "Deirdre Van den Velde"
-
+            elif name == "Derby Mcglashan":
+                name = "Derby McGlashan"
 
             # Determining if a student is a drop out
             drop_out = "No"
@@ -146,3 +150,100 @@ def weekly_performance_csv():
 
     # Returning the final in dataframe format
     return pd.DataFrame(all_records), trainers, cohorts, streams, cohort_dict
+
+def weekly_performance_main():
+    # ---------------- Connecting to the database ----------------
+
+    db_user = 'root'
+    db_password = os.getenv('MYSQL_PASSWORD')
+    db_host = 'localhost'
+    db_database = 'data605_final_project'
+
+    engine = create_engine(
+        f"mysql+pymysql://{db_user}:{db_password}@{db_host}/{db_database}"
+    )
+
+
+    #  ---------------- Retrieving the Data from the functions ----------------
+
+    weekly_performance_df, trainers, cohorts, streams, cohort_dict = weekly_performance_csv()
+
+    trainers_df = pd.DataFrame(trainers, columns= ['trainer_name'])
+    streams_df = pd.DataFrame(streams, columns = ['stream_name'])
+
+    cohort_df = pd.DataFrame(cohort_dict)
+
+    cohort_df = cohort_df.drop_duplicates(subset=["cohort_name"]).reset_index(
+        drop=True
+    )
+
+    # ---------------- Uploading Primary Data ----------------
+    try:
+        trainers_df.to_sql(name = 'trainers', con = engine, if_exists = 'append', index = False)
+        print("Successfully outputted trainers")
+
+        streams_df.to_sql(name = 'streams', con = engine, if_exists = 'append', index = False)
+        print("Successfully outputted streams")
+
+    except Exception as e:
+        print("Failed", e)
+
+    # ---------------- Cohort Referencing ----------------
+
+    trainer_lookup = pd.read_sql("SELECT trainer_id, trainer_name FROM trainers", con = engine)
+    streams_lookup = pd.read_sql("SELECT stream_id, stream_name FROM streams", con = engine)
+
+    trainer_map = dict(zip(trainer_lookup['trainer_name'], trainer_lookup['trainer_id']))
+    stream_map = dict(zip(streams_lookup["stream_name"], streams_lookup["stream_id"]))
+
+    cohort_df['trainer_id'] = cohort_df['trainer_name'].map(trainer_map)
+    cohort_df['stream_id'] = cohort_df['stream_name'].map(stream_map)
+
+    cohort_df.drop(columns = ['trainer_name', 'stream_name'], inplace = True)
+
+    cohort_df.to_sql(name='cohorts', con=engine, if_exists='append', index=False)
+    print("Successfully outputted cohorts")
+
+
+    # ---------------- Weekly Scores Referencing ----------------
+
+    cohort_lookup = pd.read_sql("SELECT cohort_id, cohort_name FROM cohorts", con = engine)
+    candidate_lookup = pd.read_sql("SELECT candidate_id, name FROM candidates", con = engine)
+
+    cohort_map = dict(zip(cohort_lookup["cohort_name"], cohort_lookup["cohort_id"]))
+    candidate_map = dict(zip(candidate_lookup["name"], candidate_lookup["candidate_id"]))
+
+    weekly_performance_df["cohort_id"] = weekly_performance_df["cohort_name"].map(cohort_map)
+    weekly_performance_df["candidate_id"] = weekly_performance_df["candidate_name"].map(candidate_map)
+
+    # # Check if the missing performance names are anywhere in the original candidates dataframe
+    # missing_names = weekly_performance_df[
+    #     ~weekly_performance_df["candidate_name"].isin(candidate_lookup["name"])
+    # ]["candidate_name"].unique()
+    #
+    # print("Unmatched names:", missing_names)
+    #
+    # print("Null check for IDs:")
+    # print(weekly_performance_df[["cohort_id", "candidate_id"]].isnull().sum())
+    #
+    weekly_performance_df.drop(columns = ['cohort_name', 'candidate_name'], inplace = True)
+
+    weekly_performance_df.to_sql(name='weekly_performances', con = engine, if_exists = 'append', index = False)
+    print("Successfully outputted weekly_performances")
+
+    # import difflib
+    #
+    # unmatched_names = weekly_performance_df[
+    #     weekly_performance_df["candidate_id"].isna()\
+    # ]["candidate_name"].unique()
+    #
+    # valid_names = candidate_lookup["name"].tolist()
+    #
+    # print(f"Found {len(unmatched_names)} unique unmatched names.\n")
+    # print(f"{'Performance Name (Unmatched)':<30} | {'Closest Candidate Match':<30}")
+    # print("-" * 65)
+    #
+    # for name in unmatched_names:
+    #   matches = difflib.get_close_matches(name, valid_names, n=1, cutoff=0.6)
+    #   closest = matches[0] if matches else "--- NO MATCH ---"
+    #   print(f"{name:<30} | {closest:<30}")
