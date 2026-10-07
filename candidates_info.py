@@ -156,7 +156,8 @@ def clean_candidate_data(df):
     "Magda Mckirton": "Magda McKirton",
     "Terrie Mackibbon": "Terrie MacKibbon",
     "Cherrita Mcgilleghole": "Cherrita McGilleghole",
-    "Deirdre Van Den Velde": "Deirdre Van den Velde"
+    "Deirdre Van Den Velde": "Deirdre Van den Velde",
+    "Derby Mcglashan": "Derby McGlashan"
     }
 
     df["name"] = df["name"].replace(name_corrections)
