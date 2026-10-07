@@ -67,6 +67,7 @@ def weekly_performance_csv():
         else:
             cohort_info["trainer_name"] = "Not given"
 
+
         for col in df.columns:
             if "_W" in col:
                 week_num = int(col.split("_W")[1])
@@ -77,6 +78,40 @@ def weekly_performance_csv():
 
         # Working through each row
         for _, row in df.iterrows():
+
+            name = row.get("name")
+
+
+            # Setting up the correct name
+            if name == "Gerhard Mcgrath":
+                name = "Gerhard McGrath"
+            elif name == "Prentice Van Der Hoeven":
+                name = "Prentice Van der Hoeven"
+            elif name == "Merrill Mckie":
+                name = "Merrill McKie"
+            elif name == "Dina Mcgookin":
+                name = "Dina McGookin"
+            elif name == "Robinett Mcphate":
+                name = "Robinett McPhate"
+            elif name == "Reg Mcreynold":
+                name = "Reg McReynold"
+            elif name == "Haskell Mcdonnell":
+                name = "Haskell McDonnell"
+            elif name == "Haroun Mccrohon":
+                name = "Haroun McCrohon"
+            elif name == "Heindrick Mckiddin":
+                name = "Heindrick McKiddin"
+            elif name == "Brenna Mcgroarty":
+                name = "Brenna McGroarty"
+            elif name == "Magda Mckirton":
+                name = "Magda McKirton"
+            elif name == "Terrie Mackibbon":
+                name = "Terrie MacKibbon"
+            elif name == "Cherrita Mcgilleghole":
+                name = "Cherrita McGilleghole"
+            elif name == "Deirdre Van Den Velde":
+                name = "Deirdre Van den Velde"
+
 
             # Determining if a student is a drop out
             drop_out = "No"
@@ -96,7 +131,7 @@ def weekly_performance_csv():
                 # into the final dataframe
                 if pd.isna(row.get(f'Analytic_W{j}')) is False:
                     all_records.append({
-                        'candidate_name': row.get('name'),
+                        'candidate_name': name,
                         'cohort_name': cohort_title,
                         'week_number': j,
                         'analytic_score': row.get(f'Analytic_W{j}'),
