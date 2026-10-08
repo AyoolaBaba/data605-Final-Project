@@ -235,3 +235,6 @@ def weekly_performance_main():
 
     weekly_performance_df.to_sql(name='weekly_performances', con = engine, if_exists = 'append', index = False)
     print("Successfully outputted weekly_performances")
+
+if __name__ == "__main__":
+    weekly_performance_main()
