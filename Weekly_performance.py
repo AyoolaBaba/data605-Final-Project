@@ -185,7 +185,6 @@ def weekly_performance_main():
         {"stream_id": 1, "stream_name": "Data"},
         {"stream_id": 2, "stream_name": "Business"},
         {"stream_id": 3, "stream_name": "Engineering"}
-        # Add any other streams you have
     ])
 
     cohort_df = pd.DataFrame(cohort_dict)
@@ -232,34 +231,7 @@ def weekly_performance_main():
     weekly_performance_df["cohort_id"] = weekly_performance_df["cohort_name"].map(cohort_map)
     weekly_performance_df["candidate_id"] = weekly_performance_df["candidate_name"].map(candidate_map)
 
-    # # Check if the missing performance names are anywhere in the original candidates dataframe
-    # missing_names = weekly_performance_df[
-    #     ~weekly_performance_df["candidate_name"].isin(candidate_lookup["name"])
-    # ]["candidate_name"].unique()
-    #
-    # print("Unmatched names:", missing_names)
-    #
-    # print("Null check for IDs:")
-    # print(weekly_performance_df[["cohort_id", "candidate_id"]].isnull().sum())
-    #
     weekly_performance_df.drop(columns = ['cohort_name', 'candidate_name'], inplace = True)
 
     weekly_performance_df.to_sql(name='weekly_performances', con = engine, if_exists = 'append', index = False)
     print("Successfully outputted weekly_performances")
-
-    # import difflib
-    #
-    # unmatched_names = weekly_performance_df[
-    #     weekly_performance_df["candidate_id"].isna()\
-    # ]["candidate_name"].unique()
-    #
-    # valid_names = candidate_lookup["name"].tolist()
-    #
-    # print(f"Found {len(unmatched_names)} unique unmatched names.\n")
-    # print(f"{'Performance Name (Unmatched)':<30} | {'Closest Candidate Match':<30}")
-    # print("-" * 65)
-    #
-    # for name in unmatched_names:
-    #   matches = difflib.get_close_matches(name, valid_names, n=1, cutoff=0.6)
-    #   closest = matches[0] if matches else "--- NO MATCH ---"
-    #   print(f"{name:<30} | {closest:<30}")
