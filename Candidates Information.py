@@ -1,27 +1,28 @@
 import boto3
 import pandas as pd
 import mysql.connector
-import os
-from dotenv import load_dotenv
-load_dotenv()
+from getpass import getpass
 
-# Make a file called .env in the same folder as this file and write: 
-# MYSQL_PASSWORD=[Insert your own mysql password into here]
 
-#  ---------------- Set up ----------------
+# -----------------------------
+# SETTINGS
+# -----------------------------
 
 BUCKET_NAME = "data605-final-project"
 PREFIX = "Talent/"
 DATABASE_NAME = "data605_final_project"
 
 
-#  ---------------- Connecting to S3 ----------------
+# -----------------------------
+# AWS S3
+# -----------------------------
 
 s3 = boto3.client("s3")
 
 
-#  ---------------- Retrieving the data from candidate files ----------------
-
+# -----------------------------
+# LOAD CANDIDATE FILES
+# -----------------------------
 
 def load_candidate_data():
     candidate_dataframes = []
@@ -86,10 +87,12 @@ def load_candidate_data():
 
     return df
 
-#  ---------------- Cleaning the candidate data ----------------
+
+# -----------------------------
+# CLEAN CANDIDATE DATA
+# -----------------------------
 
 def clean_candidate_data(df):
-    """Taking the raw candidate data input and cleaning all the entries"""
 
     # Rename columns
     df = df.rename(
@@ -135,36 +138,10 @@ def clean_candidate_data(df):
             .str.strip()
             .str.title()
         )
-    name_corrections = {
-    "Gerhard Mcgrath": "Gerhard McGrath",
-    "Prentice Van Der Hoeven": "Prentice Van der Hoeven",
-    "Merrill Mckie": "Merrill McKie",
-    "Dina Mcgookin": "Dina McGookin",
-    "Robinett Mcphate": "Robinett McPhate",
-    "Reg Mcreynold": "Reg McReynold",
-    "Haskell Mcdonnell": "Haskell McDonnell",
-    "Haroun Mccrohon": "Haroun McCrohon",
-    "Heindrick Mckiddin": "Heindrick McKiddin",
-    "Brenna Mcgroarty": "Brenna McGroarty",
-    "Magda Mckirton": "Magda McKirton",
-    "Terrie Mackibbon": "Terrie MacKibbon",
-    "Cherrita Mcgilleghole": "Cherrita McGilleghole",
-    "Deirdre Van Den Velde": "Deirdre Van den Velde",
-    "Derby Mcglashan": "Derby McGlashan"
-    }
-
-    df["name"] = df["name"].replace(name_corrections)
-
-    df["name"] = df["name"].replace({
-    "Keen Bentham3": "Keen Bentham",
-    "L;Urette Daveley": "Lurette Daveley"
-    })
 
     # -------------------------
     # Clean gender
     # -------------------------
-
-    #  ---------------- Cleaning gender ----------------
 
     if "gender" in df.columns:
         df["gender"] = (
@@ -174,7 +151,9 @@ def clean_candidate_data(df):
             .str.title()
         )
 
-    #  ---------------- Cleaning date of birth ----------------
+    # -------------------------
+    # Clean date of birth
+    # -------------------------
 
     if "date_of_birth" in df.columns:
         df["date_of_birth"] = pd.to_datetime(
@@ -183,7 +162,9 @@ def clean_candidate_data(df):
             errors="coerce"
         )
 
-    #  ---------------- Clean email ----------------
+    # -------------------------
+    # Clean email
+    # -------------------------
 
     if "email" in df.columns:
         df["email"] = (
@@ -193,7 +174,9 @@ def clean_candidate_data(df):
             .str.lower()
         )
 
-    #  ---------------- Cleaning city ----------------
+    # -------------------------
+    # Clean city
+    # -------------------------
 
     if "city" in df.columns:
         df["city"] = (
@@ -203,7 +186,9 @@ def clean_candidate_data(df):
             .str.title()
         )
 
-    #  ---------------- Cleaning addresses ----------------
+    # -------------------------
+    # Clean address
+    # -------------------------
 
     if "address" in df.columns:
         df["address"] = (
@@ -212,7 +197,9 @@ def clean_candidate_data(df):
             .str.strip()
         )
 
-    #  ---------------- Cleaning postcode ----------------
+    # -------------------------
+    # Clean postcode
+    # -------------------------
 
     if "postcode" in df.columns:
         df["postcode"] = (
@@ -222,7 +209,10 @@ def clean_candidate_data(df):
             .str.upper()
         )
 
-    #  ---------------- Cleaning phone number entries ----------------
+    # -------------------------
+    # Clean phone numbers
+    # Keep only digits and +
+    # -------------------------
 
     if "phone_number" in df.columns:
         df["phone_number"] = (
@@ -236,7 +226,9 @@ def clean_candidate_data(df):
             .replace("", pd.NA)
         )
 
-    #  ---------------- Cleaning university data ----------------
+    # -------------------------
+    # Clean university
+    # -------------------------
 
     if "university" in df.columns:
         df["university"] = (
@@ -246,7 +238,9 @@ def clean_candidate_data(df):
             .str.title()
         )
 
-    #  ---------------- Cleaning degree data ----------------
+    # -------------------------
+    # Clean degree
+    # -------------------------
 
     if "degree" in df.columns:
         df["degree"] = (
@@ -255,7 +249,9 @@ def clean_candidate_data(df):
             .str.strip()
         )
 
-    #  ---------------- Converting months to long form ----------------
+    # -------------------------
+    # Standardise month names
+    # -------------------------
 
     if "month" in df.columns:
 
@@ -287,7 +283,9 @@ def clean_candidate_data(df):
             .replace(month_mapping)
         )
 
-    #  ---------------- Cleaning recruiter names ----------------
+    # -------------------------
+    # Clean recruiter names
+    # -------------------------
 
     if "invited_by" in df.columns:
 
@@ -317,7 +315,9 @@ def clean_candidate_data(df):
             })
         )
 
-    #  ---------------- Filling missing string values ----------------
+    # -------------------------
+    # Fill missing string values
+    # -------------------------
 
     string_columns = (
         df.select_dtypes(
@@ -342,11 +342,11 @@ def clean_candidate_data(df):
     return df
 
 
-#  ---------------- Cleaning recruiters dataframes ----------------
-
+# -----------------------------
+# CREATE RECRUITERS DATAFRAME
+# -----------------------------
 
 def create_recruiters_dataframe(df):
-    """Creating recruiters dataframe with pre-determined ID's"""
 
     if "invited_by" not in df.columns:
         raise ValueError(
@@ -426,17 +426,14 @@ def create_recruiters_dataframe(df):
     return df, recruiters_df
 
 
-#  ---------------- Showing and validating data ----------------
-
+# -----------------------------
+# SHOW AND VALIDATE DATA
+# -----------------------------
 
 def validate_data(
     df,
     recruiters_df
 ):
-    """
-    Validating data points, with expected entries and converting to strings
-    Further also checking for duplicates and null values as well
-    """
 
     expected_months = {
         "January",
@@ -603,22 +600,25 @@ def validate_data(
         )
 
 
-#  ---------------- Connecting to mySQL database ----------------
+# -----------------------------
+# CONNECT TO MYSQL
+# -----------------------------
 
 def connect_to_mysql():
-    """Setting up connection to mySQL with secret passwords"""
 
-    # Setting connection login details
+    password = getpass(
+        "Enter your MySQL root password: "
+    )
+
     connection = (
         mysql.connector.connect(
             host="127.0.0.1",
             port=3306,
             user="root",
-            password=os.getenv('MYSQL_PASSWORD')
+            password=password
         )
     )
 
-    # Building the cursor
     cursor = (
         connection.cursor()
     )
@@ -641,19 +641,89 @@ def connect_to_mysql():
     return connection, cursor
 
 
-#  ---------------- Inserting recruiters ----------------
+# -----------------------------
+# CREATE MYSQL TABLES
+# -----------------------------
 
-def insert_recruiters(cursor, connection,recruiters_df):
-    """Taking recruiters input and adding it to the mySQL database through cursor and connection"""
+def create_mysql_tables(
+    cursor,
+    connection
+):
 
-    # Removing existing data entries
-    cursor.execute("SET FOREIGN_KEY_CHECKS = 0;")
-    cursor.execute("TRUNCATE TABLE candidates;")
-    cursor.execute("TRUNCATE TABLE recruiters;")
-    cursor.execute("SET FOREIGN_KEY_CHECKS = 1;")
+    # Candidates depends on recruiters
+    # so candidates must be dropped first
+    cursor.execute(
+        """
+        DROP TABLE IF EXISTS candidates
+        """
+    )
+
+    cursor.execute(
+        """
+        DROP TABLE IF EXISTS recruiters
+        """
+    )
+
+    # Recruiters table
+    cursor.execute(
+        """
+        CREATE TABLE recruiters (
+            recruiter_id INT PRIMARY KEY,
+            recruiter_name VARCHAR(255)
+            NOT NULL UNIQUE
+        )
+        """
+    )
+
+    # Candidates table
+    cursor.execute(
+        """
+        CREATE TABLE candidates (
+            candidate_id INT PRIMARY KEY,
+            name VARCHAR(255),
+            gender VARCHAR(50),
+            date_of_birth DATE NULL,
+            email VARCHAR(255),
+            city VARCHAR(255),
+            address VARCHAR(255),
+            postcode VARCHAR(20),
+            phone_number VARCHAR(50),
+            university VARCHAR(255),
+            degree VARCHAR(100),
+            month VARCHAR(20),
+            invited_by_recruiter_id INT NULL,
+
+            CONSTRAINT
+            fk_candidates_recruiter
+
+            FOREIGN KEY (
+                invited_by_recruiter_id
+            )
+
+            REFERENCES recruiters(
+                recruiter_id
+            )
+        )
+        """
+    )
+
     connection.commit()
 
-    # Setting up the existing query
+    print(
+        "\nMySQL tables created."
+    )
+
+
+# -----------------------------
+# INSERT RECRUITERS
+# -----------------------------
+
+def insert_recruiters(
+    cursor,
+    connection,
+    recruiters_df
+):
+
     insert_query = """
         INSERT INTO recruiters (
             recruiter_id,
@@ -662,7 +732,6 @@ def insert_recruiters(cursor, connection,recruiters_df):
         VALUES (%s, %s)
     """
 
-    # Setting up the recruiter data with fixed entries
     recruiter_data = [
         (
             int(row.recruiter_id),
@@ -674,7 +743,6 @@ def insert_recruiters(cursor, connection,recruiters_df):
         )
     ]
 
-    # Executing all the queries to install all the data
     cursor.executemany(
         insert_query,
         recruiter_data
@@ -688,13 +756,16 @@ def insert_recruiters(cursor, connection,recruiters_df):
     )
 
 
-#  ---------------- Inserting candidates ----------------
+# -----------------------------
+# INSERT CANDIDATES
+# -----------------------------
 
+def insert_candidates(
+    cursor,
+    connection,
+    df
+):
 
-def insert_candidates(cursor, connection, df):
-    """Inserting candidate information into the MySQL database through cursor"""
-
-    # Setting up the insert query
     insert_query = """
         INSERT INTO candidates (
             candidate_id,
@@ -719,7 +790,6 @@ def insert_candidates(cursor, connection, df):
         )
     """
 
-    # Setting the data from previous functions including edge cases
     candidate_data = [
         (
             int(row.candidate_id),
@@ -769,7 +839,6 @@ def insert_candidates(cursor, connection, df):
         )
     ]
 
-    # Inserting all the rows of the dataframe
     cursor.executemany(
         insert_query,
         candidate_data
@@ -783,10 +852,13 @@ def insert_candidates(cursor, connection, df):
     )
 
 
-#  ---------------- Showing mySQL tables ----------------
+# -----------------------------
+# SHOW MYSQL TABLES
+# -----------------------------
 
-def check_mysql_tables(cursor):
-    """Checking if the data made it into the MySQL databse"""
+def check_mysql_tables(
+    cursor
+):
 
     # Show recruiters
     cursor.execute(
@@ -909,16 +981,17 @@ def check_mysql_tables(cursor):
     )
 
 
-#  ---------------- Main file to run everything ----------------
+# -----------------------------
+# MAIN
+# -----------------------------
 
+def main():
 
-def candidates_main():
-    """Runs all the required files in a single order, such that the download and upload are completed correctly"""
     connection = None
     cursor = None
 
     try:
-        # Loading data in
+
         print(
             "Loading candidate data from S3..."
         )
@@ -926,7 +999,7 @@ def candidates_main():
         df = (
             load_candidate_data()
         )
-        # Cleaning the data retrieved
+
         print(
             "\nCleaning candidate data..."
         )
@@ -936,7 +1009,7 @@ def candidates_main():
                 df
             )
         )
-        # Creating the new dataframes
+
         print(
             "\nCreating recruiters..."
         )
@@ -947,7 +1020,6 @@ def candidates_main():
             )
         )
 
-        # Validating the dataset
         print(
             "\nChecking cleaned data..."
         )
@@ -957,13 +1029,17 @@ def candidates_main():
             recruiters_df
         )
 
-        # Setting up the connection
         print(
             "\nConnecting to MySQL..."
         )
 
         connection, cursor = (
             connect_to_mysql()
+        )
+
+        create_mysql_tables(
+            cursor,
+            connection
         )
 
         insert_recruiters(
@@ -997,5 +1073,6 @@ def candidates_main():
         ):
             connection.close()
 
+
 if __name__ == "__main__":
-    candidates_main()
+    main()
