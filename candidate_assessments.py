@@ -10,7 +10,7 @@ import pandas as pd
 import numpy as np
 from io import StringIO
 import json
-from candidates_and_recruiters_with_functions import connect_to_mysql
+from candidates_info import connect_to_mysql
 
 
 # In[2]:
@@ -810,8 +810,103 @@ joined_df
 
 # In[189]:
 
+def populate_lookup_tables():
+    connection, cursor = connect_to_mysql()
 
-onnection, cursor = connect_to_mysql()
+    try:
+        # Tech skills
+        tech_skills = [
+            "C#", "C++", "Java", "JavaScript", "PHP",
+            "Python", "R", "Ruby", "SPSS"
+        ]
+
+        cursor.executemany(
+            "INSERT INTO tech_skills (skill_name) VALUES (%s)",
+            [(skill,) for skill in tech_skills]
+        )
+
+        # Strengths
+        strengths = [
+            "Altruism",
+            "Ambitious",
+            "Charisma",
+            "Collaboration",
+            "Competitive",
+            "Composure",
+            "Consistent",
+            "Courteous",
+            "Creative",
+            "Critical Thinking",
+            "Curious",
+            "Determined",
+            "Efficient",
+            "Empathy",
+            "Independent",
+            "Innovative",
+            "Listening",
+            "Organisation",
+            "Passionate",
+            "Patient",
+            "Perfectionism",
+            "Problem Solving",
+            "Rational",
+            "Reliable",
+            "Versatile"
+        ]
+
+        cursor.executemany(
+            "INSERT INTO strengths (strength_name) VALUES (%s)",
+            [(strength,) for strength in strengths]
+        )
+
+        # Weaknesses
+        weaknesses = [
+            "Anxious",
+            "Chaotic",
+            "Chatty",
+            "Competitive",
+            "Controlling",
+            "Conventional",
+            "Critical",
+            "Distracted",
+            "Immature",
+            "Impatient",
+            "Impulsive",
+            "Indecisive",
+            "Indifferent",
+            "Intolerant",
+            "Introverted",
+            "Overbearing",
+            "Passive",
+            "Perfectionist",
+            "Procrastination",
+            "Selfish",
+            "Sensitive",
+            "Slow",
+            "Stubborn",
+            "Undisciplined"
+        ]
+
+        cursor.executemany(
+            "INSERT INTO weaknesses (weakness_name) VALUES (%s)",
+            [(weakness,) for weakness in weaknesses]
+        )
+
+        connection.commit()
+        print("Lookup tables populated successfully.")
+
+    except Exception as e:
+        connection.rollback()
+        print("Failed. Changes rolled back.")
+        raise e
+
+    finally:
+        cursor.close()
+        connection.close()
+
+populate_lookup_tables()
+
+connection, cursor = connect_to_mysql()
 
 cursor.execute("SELECT skill_id, skill_name FROM tech_skills")
 skill_lookup = pd.DataFrame(
