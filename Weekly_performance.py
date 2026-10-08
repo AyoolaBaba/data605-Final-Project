@@ -1,6 +1,6 @@
 import boto3
 import pandas as pd
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 import pymysql
 import mysql.connector
 import os
@@ -163,13 +163,29 @@ def weekly_performance_main():
         f"mysql+pymysql://{db_user}:{db_password}@{db_host}/{db_database}"
     )
 
+    try:
+        with engine.begin() as connection:
+            connection.execute(text("SET FOREIGN_KEY_CHECKS = 0;"))
+            connection.execute(text("TRUNCATE TABLE weekly_performances;"))
+            connection.execute(text("TRUNCATE TABLE cohorts;"))
+            connection.execute(text("TRUNCATE TABLE trainers;"))
+            connection.execute(text("TRUNCATE TABLE streams;"))
+            connection.execute(text("SET FOREIGN_KEY_CHECKS = 1;"))
+        print("Successfully truncated existing tables.")
+    except Exception as e:
+        print("Failed to truncate tables:", e)
+
 
     #  ---------------- Retrieving the Data from the functions ----------------
 
     weekly_performance_df, trainers, cohorts, streams, cohort_dict = weekly_performance_csv()
 
     trainers_df = pd.DataFrame(trainers, columns= ['trainer_name'])
-    streams_df = pd.DataFrame(streams, columns = ['stream_name'])
+    streams_df = pd.DataFrame([
+        {"stream_id": 1, "stream_name": "Data"},
+        {"stream_id": 2, "stream_name": "Business"},
+        {"stream_id": 3, "stream_name": "Engineering"}
+    ])
 
     cohort_df = pd.DataFrame(cohort_dict)
 
@@ -191,10 +207,9 @@ def weekly_performance_main():
     # ---------------- Cohort Referencing ----------------
 
     trainer_lookup = pd.read_sql("SELECT trainer_id, trainer_name FROM trainers", con = engine)
-    streams_lookup = pd.read_sql("SELECT stream_id, stream_name FROM streams", con = engine)
 
     trainer_map = dict(zip(trainer_lookup['trainer_name'], trainer_lookup['trainer_id']))
-    stream_map = dict(zip(streams_lookup["stream_name"], streams_lookup["stream_id"]))
+    stream_map = dict(zip(streams_df["stream_name"], streams_df["stream_id"]))
 
     cohort_df['trainer_id'] = cohort_df['trainer_name'].map(trainer_map)
     cohort_df['stream_id'] = cohort_df['stream_name'].map(stream_map)
@@ -216,34 +231,7 @@ def weekly_performance_main():
     weekly_performance_df["cohort_id"] = weekly_performance_df["cohort_name"].map(cohort_map)
     weekly_performance_df["candidate_id"] = weekly_performance_df["candidate_name"].map(candidate_map)
 
-    # # Check if the missing performance names are anywhere in the original candidates dataframe
-    # missing_names = weekly_performance_df[
-    #     ~weekly_performance_df["candidate_name"].isin(candidate_lookup["name"])
-    # ]["candidate_name"].unique()
-    #
-    # print("Unmatched names:", missing_names)
-    #
-    # print("Null check for IDs:")
-    # print(weekly_performance_df[["cohort_id", "candidate_id"]].isnull().sum())
-    #
     weekly_performance_df.drop(columns = ['cohort_name', 'candidate_name'], inplace = True)
 
     weekly_performance_df.to_sql(name='weekly_performances', con = engine, if_exists = 'append', index = False)
     print("Successfully outputted weekly_performances")
-
-    # import difflib
-    #
-    # unmatched_names = weekly_performance_df[
-    #     weekly_performance_df["candidate_id"].isna()\
-    # ]["candidate_name"].unique()
-    #
-    # valid_names = candidate_lookup["name"].tolist()
-    #
-    # print(f"Found {len(unmatched_names)} unique unmatched names.\n")
-    # print(f"{'Performance Name (Unmatched)':<30} | {'Closest Candidate Match':<30}")
-    # print("-" * 65)
-    #
-    # for name in unmatched_names:
-    #   matches = difflib.get_close_matches(name, valid_names, n=1, cutoff=0.6)
-    #   closest = matches[0] if matches else "--- NO MATCH ---"
-    #   print(f"{name:<30} | {closest:<30}")
