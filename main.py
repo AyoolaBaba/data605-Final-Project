@@ -1,5 +1,5 @@
 from candidates_info import candidates_main
-from Weekly_performance import weekly_performance_main
+from weekly_performance import weekly_performance_main
 
 def main():
     candidates_main()
